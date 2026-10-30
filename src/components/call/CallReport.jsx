@@ -5,6 +5,7 @@ import boostLogo from "../../assets/boost-logo.svg";
 import { SKILLS, buildPlan, buildReport } from "../../lib/report";
 import { FEATURES } from "../../data/boost";
 import { useReducedMotion } from "../../hooks";
+import EmailReport from "./EmailReport";
 
 const APP_URL = "https://apps.speakeasy.mobi/en/";
 const CEFR = ["A1", "A2", "B1", "B2", "C1", "C2"];
@@ -114,7 +115,7 @@ function Locked({ locked, title, onUnlock, children }) {
   );
 }
 
-export default function CallReport({ result, lang, topic, unlocked, onUnlock, onCallAgain, onNewTopic }) {
+export default function CallReport({ result, lang, topic, unlocked, email, onEmailChange, onUnlock, onCallAgain, onNewTopic }) {
   const report = useMemo(() => buildReport(result.answers, lang.code), [result, lang.code]);
   const plan = useMemo(() => buildPlan(topic.id, report, lang.name), [topic.id, report, lang.name]);
   const locked = !unlocked;
@@ -311,6 +312,8 @@ export default function CallReport({ result, lang, topic, unlocked, onUnlock, on
           <ArrowRight className="size-5 transition-transform group-hover:translate-x-1" />
         </a>
       )}
+
+      {locked && <EmailReport email={email} onEmailChange={onEmailChange} lang={lang} delay={560} />}
 
       <div className="flex items-center justify-center gap-6 text-sm font-bold text-white/80">
         <button type="button" onClick={onCallAgain} className="inline-flex items-center gap-1.5 hover:text-white">

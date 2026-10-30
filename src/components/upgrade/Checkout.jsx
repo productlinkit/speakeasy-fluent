@@ -2,22 +2,41 @@ import { useState } from "react";
 import { ArrowLeft, Check, Loader2, Lock, ShieldCheck, Tag } from "lucide-react";
 import boostLogo from "../../assets/boost-logo.svg";
 import { FEATURES, PLANS, discounted, formatIDR } from "../../data/boost";
+import { isEmail } from "../../lib/email";
 
 // Free plan = start learning in the app without BOOST (same link as speakeasy-cro's "Start learning free").
 const FREE_PLAN_URL = "https://apps.speakeasy.mobi/en/";
 
-// Mock checkout. The payment method is picked on Stripe's hosted page, so the
-// pay button will redirect there once it's wired to be.speakeasy.mobi /payment.
-export default function Checkout({ promo, onBack, onPaid }) {
+function GoogleIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 0 1-2.4 3.6v3h3.9c2.2-2.1 3.5-5.1 3.5-8.8Z" />
+      <path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-2.9l-3.9-3c-1.1.7-2.5 1.2-4.1 1.2-3.1 0-5.8-2.1-6.7-5H1.3v3.1A12 12 0 0 0 12 24Z" />
+      <path fill="#FBBC05" d="M5.3 14.3a7.2 7.2 0 0 1 0-4.6V6.6h-4a12 12 0 0 0 0 10.8l4-3.1Z" />
+      <path fill="#EA4335" d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4A12 12 0 0 0 1.3 6.6l4 3.1c.9-2.9 3.6-4.9 6.7-4.9Z" />
+    </svg>
+  );
+}
+
+// Mockup checkout: no login needed, the email (or Google) stands in for the
+// account. Paying just waits a moment and moves on to the success page.
+export default function Checkout({ promo, email, onEmailChange, onBack, onPaid }) {
   const [planId, setPlanId] = useState("annual");
-  const [paying, setPaying] = useState(false);
+  const [paying, setPaying] = useState(null); // null | "email" | "google"
+  const [error, setError] = useState(null);
   const plan = PLANS.find((p) => p.id === planId);
   const total = discounted(plan.price, promo);
 
-  const pay = () => {
-    setPaying(true);
-    window.dataLayer?.push({ event: "checkout_submit", plan: plan.id, promo: promo?.code, value: total });
-    setTimeout(() => onPaid(plan), 1600);
+  const pay = (method) => {
+    if (method === "email" && !isEmail(email)) {
+      setError("Enter your email so we can set up your BOOST account.");
+      document.getElementById("checkout-email")?.focus();
+      return;
+    }
+    setError(null);
+    setPaying(method);
+    window.dataLayer?.push({ event: "checkout_submit", plan: plan.id, promo: promo?.code, value: total, auth: method });
+    setTimeout(() => onPaid({ plan, promo, total, method, email: method === "email" ? email.trim() : null }), 1600);
   };
 
   return (
@@ -108,21 +127,65 @@ export default function Checkout({ promo, onBack, onPaid }) {
             </div>
           </dl>
 
+          <form
+            className="mt-5"
+            noValidate
+            onSubmit={(e) => {
+              e.preventDefault();
+              pay("email");
+            }}
+          >
+            <label htmlFor="checkout-email" className="text-sm font-bold">
+              Email for your BOOST account
+            </label>
+            <input
+              id="checkout-email"
+              type="email"
+              autoComplete="email"
+              inputMode="email"
+              placeholder="you@email.com"
+              value={email}
+              onChange={(e) => {
+                onEmailChange(e.target.value);
+                setError(null);
+              }}
+              aria-invalid={!!error}
+              aria-describedby="checkout-email-hint"
+              className={`mt-1.5 h-12 w-full rounded-xl border-2 bg-white px-4 outline-none placeholder:text-muted/70 focus:border-primary ${
+                error ? "border-red-400" : "border-border"
+              }`}
+            />
+            <p id="checkout-email-hint" className={`mt-1.5 text-xs ${error ? "font-bold text-red-600" : "text-muted"}`}>
+              {error ?? "No password needed now. We'll email you a link to log in. Already have an account? Use the same email."}
+            </p>
+            <button
+              type="submit"
+              disabled={!!paying}
+              className="mt-4 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-secondary text-lg font-bold text-white shadow-[0_6px_0_0_var(--color-navy)] transition-all hover:translate-y-0.5 hover:shadow-[0_4px_0_0_var(--color-navy)] active:translate-y-1.5 active:shadow-none disabled:opacity-80"
+            >
+              {paying === "email" ? (
+                <>
+                  <Loader2 className="size-5 animate-spin" /> Redirecting to Stripe…
+                </>
+              ) : (
+                <>
+                  <Lock className="size-4" /> Pay {formatIDR(total)}
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="my-4 flex items-center gap-3 text-xs font-bold text-muted" aria-hidden="true">
+            <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
+          </div>
           <button
             type="button"
-            onClick={pay}
-            disabled={paying}
-            className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-secondary text-lg font-bold text-white shadow-[0_6px_0_0_var(--color-navy)] transition-all hover:translate-y-0.5 hover:shadow-[0_4px_0_0_var(--color-navy)] active:translate-y-1.5 active:shadow-none disabled:opacity-80"
+            onClick={() => pay("google")}
+            disabled={!!paying}
+            className="flex h-12 w-full items-center justify-center gap-2.5 rounded-full border-2 border-border bg-white font-bold shadow-[0_4px_0_0_var(--color-border)] transition-all hover:translate-y-0.5 hover:shadow-[0_2px_0_0_var(--color-border)] active:translate-y-1 active:shadow-none disabled:opacity-80"
           >
-            {paying ? (
-              <>
-                <Loader2 className="size-5 animate-spin" /> Redirecting to Stripe…
-              </>
-            ) : (
-              <>
-                <Lock className="size-4" /> Pay {formatIDR(total)}
-              </>
-            )}
+            {paying === "google" ? <Loader2 className="size-5 animate-spin" /> : <GoogleIcon className="size-5" />}
+            Continue with Google
           </button>
           <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-muted">
             <ShieldCheck className="size-3.5" /> Secure checkout with Stripe · cancel anytime
@@ -135,9 +198,6 @@ export default function Checkout({ promo, onBack, onPaid }) {
             >
               Continue with free plan
             </a>
-          </p>
-          <p className="mt-3 rounded-xl bg-amber-50 p-2.5 text-center text-xs font-medium text-amber-800">
-            Demo checkout: no Stripe redirect or real payment yet.
           </p>
         </aside>
       </div>

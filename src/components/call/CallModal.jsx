@@ -10,6 +10,7 @@ import CallReport from "./CallReport";
 import CallEndedEarly from "./CallEndedEarly";
 import LuckScreen from "../upgrade/LuckScreen";
 import Checkout from "../upgrade/Checkout";
+import PaymentSuccess from "../upgrade/PaymentSuccess";
 
 const CONNECT_MS = 2600;
 const THINK_MS = 800;
@@ -38,10 +39,11 @@ export default function CallModal({ open, langCode, onLangChange, onClose }) {
   const [elapsed, setElapsed] = useState(0);
   const [name, setName] = useState("");
   const [result, setResult] = useState(null); // { answers, durationMs, enough }
-  const [upgrade, setUpgrade] = useState(null); // null | "luck" | "checkout"
+  const [upgrade, setUpgrade] = useState(null); // null | "luck" | "checkout" | "success"
   const [promo, setPromo] = useState(null);
   const [boosted, setBoosted] = useState(false);
-  const [toast, setToast] = useState(null);
+  const [order, setOrder] = useState(null);
+  const [email, setEmail] = useState(""); // shared by "Email me my report" and checkout
 
   const callId = useRef(0);
   const phaseRef = useRef("speaking");
@@ -328,11 +330,10 @@ export default function CallModal({ open, langCode, onLangChange, onClose }) {
     setUpgrade(promo ? "checkout" : "luck");
   }
 
-  function handlePaid(plan) {
+  function handlePaid(paid) {
     setBoosted(true);
-    setUpgrade(null);
-    setToast(`Welcome to BOOST ${plan.label}! Your full report is unlocked.`);
-    setTimeout(() => setToast(null), 4000);
+    setOrder(paid);
+    setUpgrade("success");
   }
 
   function handleClose() {
@@ -394,12 +395,6 @@ export default function CallModal({ open, langCode, onLangChange, onClose }) {
         )}
       </header>
 
-      {toast && (
-        <p role="status" className="absolute top-20 left-1/2 z-30 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 animate-pop-in rounded-2xl bg-emerald-500 px-4 py-3 text-center font-bold shadow-lg">
-          🎉 {toast}
-        </p>
-      )}
-
       {upgrade && (
         <div className="absolute inset-0 z-20 flex animate-[fade-in_0.3s_ease-out] flex-col bg-[#eff8fe]">
           {upgrade === "luck" && (
@@ -419,8 +414,10 @@ export default function CallModal({ open, langCode, onLangChange, onClose }) {
                 setUpgrade("checkout");
               }}
             />
+          ) : upgrade === "success" ? (
+            <PaymentSuccess order={order} onViewReport={() => setUpgrade(null)} />
           ) : (
-            <Checkout promo={promo} onBack={() => setUpgrade(null)} onPaid={handlePaid} />
+            <Checkout promo={promo} email={email} onEmailChange={setEmail} onBack={() => setUpgrade(null)} onPaid={handlePaid} />
           )}
         </div>
       )}
@@ -435,6 +432,8 @@ export default function CallModal({ open, langCode, onLangChange, onClose }) {
               lang={lang}
               topic={topic}
               unlocked={boosted}
+              email={email}
+              onEmailChange={setEmail}
               onUnlock={startUpgrade}
               onCallAgain={() => startCall(topic)}
               onNewTopic={() => setStage("topic")}
