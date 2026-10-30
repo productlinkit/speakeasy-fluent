@@ -9,12 +9,11 @@ import Headline from "./components/Headline";
 import LanguagePicker from "./components/LanguagePicker";
 import CallCard from "./components/CallCard";
 import CtaButton from "./components/CtaButton";
+import CallModal from "./components/call/CallModal";
 import GreetingMarquee from "./components/GreetingMarquee";
 import { LANGUAGES } from "./data/languages";
 import { useReducedMotion } from "./hooks";
 
-// Where "Call Renald Now" sends people; the picked language is appended as ?lang=.
-const CALL_URL = "https://speakeasy-cro.vercel.app/";
 const AUTO_ROTATE_MS = 7000;
 const PERKS = ["No sign-up", "Speak or type", "Free speaking report"];
 
@@ -43,17 +42,18 @@ export default function App() {
   const reduced = useReducedMotion();
   const [code, setCode] = useState("en");
   const [touched, setTouched] = useState(false);
+  const [callOpen, setCallOpen] = useState(false);
   const sectionRef = useRef(null);
   const lang = LANGUAGES.find((l) => l.code === code);
 
   // Cycle languages until the visitor picks one themselves.
   useEffect(() => {
-    if (touched || reduced) return;
+    if (touched || reduced || callOpen) return;
     const id = setInterval(() => {
       setCode((c) => LANGUAGES[(LANGUAGES.findIndex((l) => l.code === c) + 1) % LANGUAGES.length].code);
     }, AUTO_ROTATE_MS);
     return () => clearInterval(id);
-  }, [touched, reduced]);
+  }, [touched, reduced, callOpen]);
 
   const pick = (next, byUser) => {
     setCode(next);
@@ -137,7 +137,7 @@ export default function App() {
 
           <div className="mt-8 animate-pop-in" style={{ animationDelay: "1300ms" }}>
             <div className="flex flex-col items-center gap-4 sm:flex-row lg:justify-start">
-              <CtaButton href={`${CALL_URL}?lang=${lang.code}`} lang={lang} />
+              <CtaButton onCall={() => setCallOpen(true)} lang={lang} />
               <p className="flex items-center gap-2 text-sm font-medium text-white/90" aria-live="polite">
                 <img key={lang.code} src={lang.flag} alt="" className="size-6 animate-pop-in rounded-full object-cover ring-2 ring-white/60" />
                 <span>
@@ -189,6 +189,8 @@ export default function App() {
       </div>
 
       <GreetingMarquee />
+
+      <CallModal open={callOpen} langCode={code} onLangChange={(c) => pick(c, true)} onClose={() => setCallOpen(false)} />
     </section>
   );
 }

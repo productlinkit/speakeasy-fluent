@@ -90,6 +90,26 @@
   }
 }
 
+/* Keyframes used through arbitrary `animate-[...]` values, kept outside @theme so they always ship. */
+@keyframes fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+@keyframes prize-pop {
+  0% { transform: scale(1) rotate(0); }
+  40% { transform: scale(1.08) rotate(-2deg); }
+  70% { transform: scale(0.98) rotate(1deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+@keyframes countdown-ring {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: 1; }
+}
+@keyframes confetti-fall {
+  0% { opacity: 0.9; transform: translate(0, 0) rotate(0); }
+  100% { opacity: 0.9; transform: translate(var(--drift), 105vh) rotate(var(--spin)); }
+}
+
 @layer base {
   html {
     -webkit-font-smoothing: antialiased;

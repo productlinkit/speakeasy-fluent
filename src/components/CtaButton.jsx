@@ -20,19 +20,15 @@ function burst() {
   });
 }
 
-export default function CtaButton({ href, lang }) {
+export default function CtaButton({ onCall, lang }) {
   const reduced = useReducedMotion();
   const [pieces, setPieces] = useState([]);
-  const [calling, setCalling] = useState(false);
 
-  const onClick = (e) => {
+  const onClick = () => {
     window.dataLayer?.push({ event: "call_cta_click", location: "campaign_hero", language: lang.code });
-    // Modified clicks (new tab etc.) keep native behaviour.
-    if (reduced || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
-    e.preventDefault();
+    if (reduced) return onCall();
     setPieces(burst());
-    setCalling(true);
-    setTimeout(() => window.location.assign(href), 750);
+    setTimeout(onCall, 350);
   };
 
   return (
@@ -40,8 +36,8 @@ export default function CtaButton({ href, lang }) {
       {/* Idle attention pulse */}
       <span aria-hidden="true" className="absolute inset-0 animate-cta-pulse rounded-full bg-white/50" />
 
-      <a
-        href={href}
+      <button
+        type="button"
         onClick={onClick}
         className="button-3d group relative inline-flex h-16 w-full items-center justify-center gap-3 overflow-hidden rounded-full bg-secondary px-9 text-lg font-bold whitespace-nowrap text-white outline-none focus-visible:ring-4 focus-visible:ring-white/70 sm:w-auto md:h-[4.25rem] md:px-11 md:text-xl"
       >
@@ -51,11 +47,11 @@ export default function CtaButton({ href, lang }) {
         />
         <span className="relative flex size-9 items-center justify-center rounded-full bg-white text-secondary">
           <Phone
-            className={`size-[18px] fill-current ${calling ? "animate-ring" : "animate-[ring_1.6s_ease-in-out_infinite_2s]"}`}
+            className="size-[18px] animate-[ring_1.6s_ease-in-out_infinite_2s] fill-current"
           />
         </span>
-        <span className="relative">{calling ? "Calling Renald…" : "Call Renald Now"}</span>
-      </a>
+        <span className="relative">Call Renald Now</span>
+      </button>
 
       <span aria-hidden="true" className="pointer-events-none absolute inset-0">
         {pieces.map((p) => (

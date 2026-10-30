@@ -8,6 +8,7 @@ import de from "../assets/flags/de.svg";
 export const LANGUAGES = [
   {
     code: "en",
+    speechLang: "en-US",
     name: "English",
     native: "English",
     greeting: "Hello!",
@@ -18,6 +19,7 @@ export const LANGUAGES = [
   },
   {
     code: "es",
+    speechLang: "es-ES",
     name: "Spanish",
     native: "Español",
     greeting: "¡Hola!",
@@ -28,6 +30,7 @@ export const LANGUAGES = [
   },
   {
     code: "fr",
+    speechLang: "fr-FR",
     name: "French",
     native: "Français",
     greeting: "Bonjour !",
@@ -38,6 +41,7 @@ export const LANGUAGES = [
   },
   {
     code: "ja",
+    speechLang: "ja-JP",
     name: "Japanese",
     native: "日本語",
     greeting: "こんにちは！",
@@ -48,6 +52,7 @@ export const LANGUAGES = [
   },
   {
     code: "de",
+    speechLang: "de-DE",
     name: "German",
     native: "Deutsch",
     greeting: "Hallo!",
